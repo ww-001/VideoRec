@@ -1,0 +1,101 @@
+# ========== Python ==========
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+
+# ========== PyInstaller 构建产物 ==========
+src/dist/
+src/build/
+*.spec.bak
+_decompiled/
+VideoRec.exe_extracted/
+_internal/
+
+# ========== 发布版本目录（手动 Release 附件，不进 git）==========
+VideoRec_win7_v*/
+VideoRec_win7_v*.zip
+VideoRec_win7_v*.zip.OLD*
+
+# ========== 构建/打包日志 ==========
+_build_*.txt
+_build_*.log
+_diag_dist/
+
+# ========== 诊断/测试脚本（开发过程残留，非产品代码）==========
+src/_smoke*.py
+src/_smoke*.log
+src/_smoke*.txt
+src/_smoke*.out
+src/_smoke*_out/
+src/_smoke*_projects/
+src/_smoke*_fault.log
+src/_test_*.py
+src/_ui_hits*.txt
+src/_diag_win7.py
+src/_pyinstxtractor.py
+src/**/*.py.bak*
+src/**/*.bak
+src/main_window.py.bak*
+
+# ========== 诊断目录（开发期测试产物）==========
+diag/
+diag/*/build/
+diag/*/dist/
+diag/*.log
+diag/*.exe
+
+# ========== 运行时数据（不跟踪）==========
+projects/
+src/projects/
+*.avi
+*.mp4
+*.mkv
+recordings/
+
+# ========== 错误日志 ==========
+videorec_error.log
+videorec_trigger.log
+
+# ========== 私人内容（不要上传）=========
+微信图片_*
+
+# ========== IDE / 编辑器 ==========
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ========== OS ==========
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ========== 临时备份 ==========
+*.bak
+*.tmp
+*.orig
+*.rej
+*.py.bak
+
+# ========== 大型 wheels 目录（除 wheels38 保留）==========
+wheels/
+wheels39/
+wheels310/
+
+# ========== 老 git 仓库（避免嵌套 git 混乱）==========
+源码/
+源码/.git/
+
+# ========== 其他临时文件 ==========
+*.swp
+*.pyc.bak

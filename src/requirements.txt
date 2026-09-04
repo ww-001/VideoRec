@@ -1,0 +1,5 @@
+opencv-python==4.8.1.78
+PyQt5==5.15.10
+numpy==1.26.4
+pynput==1.8.2
+six==1.17.0

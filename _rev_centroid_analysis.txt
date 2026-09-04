@@ -1,0 +1,182 @@
+# -*- coding: utf-8 -*-
+"""AP524 层面轴突分布几何分析：密度加权质心（左右脑分开）+ 空间扩展 + 不对称性。
+
+数据源：
+- density_matrix.csv: 行=DV(120-610), 列=LR(210-953), 值=神经元计数
+- analysis_AP524.json: 每神经元按结构的 [LR, DV] 点列表（用于逐神经元质心）
+
+坐标约定（Kim atlas CCFv3）：
+- LR: 0=左, 570=中线, 1139=右
+- DV: 0=dorsal(顶), 799=ventral(底)
+- AP: 540=Bregma, AP524 = Bregma -0.16mm
+"""
+import json
+import os
+import zipfile
+
+import numpy as np
+
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'output')
+MIDLINE = 570.0
+DV_DORSAL = 0.0
+DV_VENTRAL = 799.0
+
+
+def load_density_csv():
+    """读 density_matrix.csv → (dv_values, lr_values, density 2D array)"""
+    z = zipfile.ZipFile(os.path.join(OUT, 'heatmap_AP524_data.zip'))
+    raw = z.read('density_matrix.csv').decode('utf-8').splitlines()
+    header = raw[0].split(',')
+    lr_values = np.array([float(x) for x in header[1:]])
+    dv_values = []
+    rows = []
+    for ln in raw[1:]:
+        if not ln.strip():
+            continue
+        parts = ln.split(',')
+        dv_values.append(float(parts[0]))
+        rows.append([float(x) for x in parts[1:]])
+    return (np.array(dv_values), lr_values,
+            np.array(rows, dtype=np.float64))
+
+
+def weighted_centroid(dv, lr, dens):
+    """密度加权质心 → (lr_c, dv_c)。"""
+    w = dens.sum()
+    if w <= 0:
+        return None
+    lr_c = (dens * lr[None, :]).sum() / w
+    dv_c = (dens * dv[:, None]).sum() / w
+    return lr_c, dv_c
+
+
+def cov_ellipse(dv, lr, dens):
+    """密度加权 2D 协方差 → 主轴角度与长短轴。"""
+    c = weighted_centroid(dv, lr, dens)
+    if c is None:
+        return None
+    lr_c, dv_c = c
+    w = dens.sum()
+    lr_dev = lr[None, :] - lr_c
+    dv_dev = dv[:, None] - dv_c
+    s_lr2 = (dens * lr_dev**2).sum() / w
+    s_dv2 = (dens * dv_dev**2).sum() / w
+    s_lrdv = (dens * lr_dev * dv_dev).sum() / w
+    # 协方差矩阵特征分解 → 主轴
+    cov = np.array([[s_lr2, s_lrdv], [s_lrdv, s_dv2]])
+    evals, evecs = np.linalg.eigh(cov)
+    major_axis = evecs[:, np.argmax(evals)]  # 长轴方向
+    theta = np.degrees(np.arctan2(major_axis[1], major_axis[0]))
+    return {
+        'sd_lr': float(np.sqrt(s_lr2)),
+        'sd_dv': float(np.sqrt(s_dv2)),
+        'cov': float(s_lrdv),
+        'major_sd': float(np.sqrt(evals.max())),
+        'minor_sd': float(np.sqrt(evals.min())),
+        'major_angle_deg': float(theta),  # 相对 LR 轴（正=指向 ventral）
+        'eccentricity': float(np.sqrt(1 - evals.min() / evals.max())),
+    }
+
+
+def percentile_box(dv, lr, dens, p=90):
+    """密度加权 p 分位包围盒。"""
+    w = dens.sum()
+    flat = dens.ravel()
+    idx = np.argsort(flat)[::-1]
+    cum = np.cumsum(flat[idx])
+    keep = idx[cum <= w * p / 100.0]
+    if len(keep) == 0:
+        keep = idx[:1]
+    ys, xs = np.unravel_index(keep, dens.shape)
+    return {
+        'lr_min': float(lr[xs].min()), 'lr_max': float(lr[xs].max()),
+        'dv_min': float(dv[ys].min()), 'dv_max': float(dv[ys].max()),
+        'lr_span': float(lr[xs].max() - lr[xs].min()),
+        'dv_span': float(dv[ys].max() - dv[ys].min()),
+    }
+
+
+def per_neuron_centroids():
+    """从 JSON 每神经元按结构的点 → 每神经元质心列表（左/右/全）。"""
+    j = json.load(open(os.path.join(OUT, 'analysis_AP524.json'), encoding='utf-8'))
+    all_c, left_c, right_c = [], [], []
+    for r in j['results']:
+        pts = []
+        for v in r['by_structure'].values():
+            pts.extend(v['points'])  # [LR, DV]
+        if not pts:
+            continue
+        a = np.array(pts, dtype=float)
+        lr, dv = a[:, 0], a[:, 1]
+        all_c.append((lr.mean(), dv.mean()))
+        m = lr < MIDLINE
+        if m.any():
+            left_c.append((lr[m].mean(), dv[m].mean()))
+        if (~m).any():
+            right_c.append((lr[~m].mean(), dv[~m].mean()))
+    return all_c, left_c, right_c, len(j['results'])
+
+
+def main():
+    dv, lr, dens = load_density_csv()
+    n_neurons = int(dens.max())  # max density = 全部神经元数（每组 1）
+    # 用真实神经元数（从 CSV 统计）
+    print('=' * 62)
+    print('AP524 层面轴突分布几何分析 (Bregma -0.16mm)')
+    print('=' * 62)
+    print('数据: DV %d-%d, LR %d-%d, 非零像素 %d'
+          % (dv.min(), dv.max(), lr.min(), lr.max(), (dens > 0).sum()))
+    print('中线 LR=570, DV=0=dorsal(顶), DV=799=ventral(底)\n')
+
+    left = dens[:, lr < MIDLINE]
+    right = dens[:, lr >= MIDLINE]
+    lr_l = lr[lr < MIDLINE]
+    lr_r = lr[lr >= MIDLINE]
+
+    for name, dd, ll in (('全脑', dens, lr),
+                         ('左脑 (LR<570)', left, lr_l),
+                         ('右脑 (LR>=570)', right, lr_r)):
+        c = weighted_centroid(dv, ll, dd)
+        if c is None:
+            print('%s: 无数据' % name)
+            continue
+        lr_c, dv_c = c
+        ell = cov_ellipse(dv, ll, dd)
+        box = percentile_box(dv, ll, dd, 90)
+        print('── %s ──' % name)
+        print('  密度加权质心: LR=%.1f (中线偏移 %+.1f), DV=%.1f (距顶 %.1f, 深度占比 %.0f%%)'
+              % (lr_c, lr_c - MIDLINE, dv_c, dv_c, 100 * dv_c / DV_VENTRAL))
+        print('  扩展: SD_LR=%.1f, SD_DV=%.1f, 主轴角度=%.0f°(相对LR轴, 正=偏ventral), 离心率=%.2f'
+              % (ell['sd_lr'], ell['sd_dv'], ell['major_angle_deg'], ell['eccentricity']))
+        print('  90%%包围盒: LR %d-%d (span %d), DV %d-%d (span %d)'
+              % (box['lr_min'], box['lr_max'], box['lr_span'],
+                 box['dv_min'], box['dv_max'], box['dv_span']))
+        print()
+
+    # 左右不对称
+    wl, wr = left.sum(), right.sum()
+    ai = (wl - wr) / (wl + wr) if (wl + wr) > 0 else 0
+    print('── 左右不对称 ──')
+    print('  左像素计数 %.0f / 右 %.0f | 不对称指数 AI=(L-R)/(L+R)=%+.3f'
+          % (wl, wr, ai))
+
+    # 逐神经元质心
+    all_c, left_c, right_c, nres = per_neuron_centroids()
+    print('\n── 逐神经元质心 (N=%d 神经元) ──' % nres)
+    for nm, lst in (('全脑', all_c), ('左脑', left_c), ('右脑', right_c)):
+        a = np.array(lst)
+        print('  %s: n=%d, LR=%.1f±%.1f, DV=%.1f±%.1f'
+              % (nm, len(a), a[:, 0].mean(), a[:, 0].std(),
+                 a[:, 1].mean(), a[:, 1].std()))
+    # 左右镜像对称性：右脑质心 vs 左脑质心关于中线的镜像
+    if left_c and right_c:
+        l = np.array(left_c)
+        r = np.array(right_c)
+        print('\n  镜像对称检验（右脑 LR 应≈ 1140 - 左脑镜像）:')
+        print('  左脑质心 LR=%.1f → 镜像期望 %.1f, 右脑质心实际 %.1f, 偏差 %+.1f'
+              % (l[:, 0].mean(), 1140 - l[:, 0].mean(),
+                 r[:, 0].mean(), r[:, 0].mean() - (1140 - l[:, 0].mean())))
+
+
+if __name__ == '__main__':
+    main()
