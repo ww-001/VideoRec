@@ -5,7 +5,7 @@
 **Latest stable:** v10.14.11 · **First release:** v10.10 · **Platform:** Windows 7 SP1 (offline) · Windows 10/11 · **Stack:** Python 3.8.10 + PyQt5 + OpenCV + PyInstaller
 
 A four-channel simultaneous USB camera recording tool for rodent behavioral experiments.
-Multi-process capture architecture (one worker subprocess per channel), reference-frame ghost overlay for cross-day rig alignment, mouse-region click triggering, and TTL synchronization.
+Multi-process capture architecture (one worker subprocess per channel), reference-frame ghost overlay for cross-day rig alignment, mouse-region click triggering, and per-channel software frame timestamps.
 Designed for **offline Windows 7 rigs** with no internet access.
 
 ---
@@ -19,7 +19,7 @@ Designed for **offline Windows 7 rigs** with no internet access.
 | **Reference-frame alignment** | First-day reference frame + ghost overlay + ORB feature matching for positional consistency |
 | **Quantitative consistency** | Brightness / contrast / histogram correlation / over-exposure ratio / blur metric, with green/yellow/red signal |
 | **Region-click trigger** | Pick any screen region (e.g. fiber-photometry button) → click starts/stops all-channel recording |
-| **TTL synchronization** | Frame-level timestamps written to sidecar CSV for cross-device alignment |
+| **Per-channel software timestamps** | Per-frame system timestamps written to sidecar CSV for cross-device alignment (software-side, not hardware TTL sync) |
 | **In-recording notes** | F1–F9 behavioral event markers written to per-channel meta.json |
 | **Offline Win7 build** | PyInstaller onedir bundle; runs on stock Win7 SP1 with KB2999226 only |
 
@@ -27,8 +27,12 @@ Designed for **offline Windows 7 rigs** with no internet access.
 
 ## 📥 Download
 
-Download the latest **`VideoRec_win7_v10.14.11.zip`** (≈200 MB) from the
-[**Releases**](../../releases) page. Unzip anywhere → double-click `启动_Win7.bat`.
+Download the **pre-built Windows package**:
+
+- 📦 **Direct download:** [**`VideoRec_win7_v10.14.11.zip`**](https://github.com/ww-001/VideoRec/releases/download/v10.14.11/VideoRec_win7_v10.14.11.zip) (≈200 MB)
+- 📋 **Browse all releases:** [**Releases page**](../../releases)
+
+After download: unzip → double-click `启动_Win7.bat`.
 
 > **Target machine requirements:** Windows 7 SP1 (with `KB2999226` already installed for UCRT) or Windows 10/11 · USB 2.0/3.0 ports · UVC cameras (driver-free). For mouse-region trigger, **run both VideoRec and the trigger-target app as Administrator**.
 
@@ -132,7 +136,12 @@ If you use VideoRec in your research, please cite:
 
 ### 快速上手
 
-下载 `VideoRec_win7_v10.14.11.zip`（[Releases](../../releases)）→ 解压 → 双击 `启动_Win7.bat`。
+下载预编译的 Windows 包：
+
+- 📦 **直接下载：** [**`VideoRec_win7_v10.14.11.zip`**](https://github.com/ww-001/VideoRec/releases/download/v10.14.11/VideoRec_win7_v10.14.11.zip)（≈200 MB）
+- 📋 **查看所有版本：** [Releases 页面](../../releases)
+
+下载后：解压 → 双击 `启动_Win7.bat`。
 
 源码运行（开发机，需 Python 3.8.10）：
 ```bash
