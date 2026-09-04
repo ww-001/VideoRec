@@ -2,11 +2,11 @@
 
 > 🇨🇳 **中文版说明见下方「中文简介」段** / For Chinese users, see "中文简介" section below.
 
-**Latest stable:** v10.14.11 · **First release:** v10.10 · **Platform:** Windows 7 SP1 (offline) · Windows 10/11 · **Stack:** Python 3.8.10 + PyQt5 + OpenCV + PyInstaller
+**Latest stable:** v10.14.11 · **First release:** v10.10 · **Platform:** Windows 10/11 (primary) · Windows 7 SP1 (offline, compatible) · **Stack:** Python 3.8.10 + PyQt5 + OpenCV + PyInstaller
 
 A four-channel simultaneous USB camera recording tool for rodent behavioral experiments.
-Multi-process capture architecture (one worker subprocess per channel), reference-frame ghost overlay for cross-day rig alignment, mouse-region click triggering, and per-channel software frame timestamps.
-Designed for **offline Windows 7 rigs** with no internet access.
+Multi-process capture (one worker subprocess per channel) with **per-channel reference-frame ghost overlay for cross-session rig repeatability**, **mouse-region click triggering for software-level soft sync without hardware TTL**, and per-channel software frame timestamps for offline alignment.
+Primary development on Windows 10/11, with **offline Windows 7 SP1 compatibility** (PyInstaller onedir bundle; no internet required at runtime).
 
 ---
 
@@ -16,9 +16,9 @@ Designed for **offline Windows 7 rigs** with no internet access.
 |---|---|
 | **Multi-camera capture** | 4× USB UVC cameras simultaneously, up to 800×600 @ 30 fps per channel |
 | **Process isolation** | Each camera runs in an independent worker subprocess — one channel crash never kills the others |
-| **Reference-frame alignment** | First-day reference frame + ghost overlay + ORB feature matching for positional consistency |
+| **Per-channel reference-frame alignment** | Each channel saves its own first-day reference frame; ghost overlay + ORB feature matching detect sub-pixel rig drift — **ensures cross-session experimental reproducibility** |
 | **Quantitative consistency** | Brightness / contrast / histogram correlation / over-exposure ratio / blur metric, with green/yellow/red signal |
-| **Region-click trigger** | Pick any screen region (e.g. fiber-photometry button) → click starts/stops all-channel recording |
+| **Mouse-region click trigger** | Pick any on-screen region (e.g. a fiber-photometry "start" button) → a single click starts/stops all 4 channels simultaneously — **software-level soft sync**, no hardware TTL cable required |
 | **Per-channel software timestamps** | Per-frame system timestamps written to sidecar CSV for cross-device alignment (software-side, not hardware TTL sync) |
 | **In-recording notes** | F1–F9 behavioral event markers written to per-channel meta.json |
 | **Offline Win7 build** | PyInstaller onedir bundle; runs on stock Win7 SP1 with KB2999226 only |
@@ -119,16 +119,16 @@ If you use VideoRec in your research, please cite:
 ## 中文简介
 
 **VideoRec（四路版）** 是面向小鼠行为学实验的四路 USB 摄像头同步录制工具。
-多进程采集架构（每路独立 worker 子进程），**每路独立**的参考帧虚影对齐，鼠标区域点击触发，软件帧级时间戳。
-主要在 **Windows 10/11** 上开发与运行，同时**兼容离线 Win7 实验机**（PyInstaller onedir 打包 + UCRT 修补）。
+多进程采集（每路独立 worker 子进程）—— **每路独立参考帧对齐**保障跨日实验可重复性，**鼠标区域点击触发**实现无硬件 TTL 条件下的软同步，软件帧级时间戳用于离线对齐。
+主要在 **Windows 10/11** 上开发与运行，同时**兼容离线 Win7 SP1 实验机**（PyInstaller onedir 打包 + UCRT 修补）。
 
 ### 主要功能
 
 - **四路同步录制**：4 路 USB 摄像头同时录制，最高 800×600 @ 30 fps/路
 - **进程隔离**：每路独立子进程，单路崩溃不影响其他路（v10.14 多进程架构改造）
-- **每路独立参考帧对齐**：每路自己的参考帧 + 半透明虚影叠加 + ORB 特征匹配，调机量化
+- **每路独立参考帧对齐**：每路独立保存第一天参考帧，虚影叠加 + ORB 特征匹配自动检测亚像素级设备漂移 —— **保障跨日实验可重复性**（核心亮点之一）
 - **每路独立量化对比**：亮度差 / 对比度差 / 直方图相关性 / 过曝比例 / 模糊度，绿黄红信号
-- **鼠标区域触发**：框选屏幕上任一区域（如 fiberphotometry 开始按钮），点击即触发所有路同时录制
+- **鼠标区域点击触发**：框选屏幕上任一区域（如 fiberphotometry 的"开始"按钮），单击 → 4 路同时开/停。**软件级软同步** —— 无需硬件 TTL 接线，适合实验机已经引入外部设备（光纤记录、行为评分软件等）的场景（核心亮点之一）
 - **帧级软件时间戳**：每帧写入系统时间戳到 sidecar CSV，跨设备数据对齐（**软件时间戳**，非硬件 TTL；硬件 TTL 同步方案见 [`开发方案_多摄像头与TTL同步.md`](开发方案_多摄像头与TTL同步.md)）
 - **行为备注**：F1-F9 实时打点，写入每路 meta.json
 - **离线 Win7 打包**：onedir 模式，目标机只需装 KB2999226 即可运行
