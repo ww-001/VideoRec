@@ -57,7 +57,6 @@ For building the offline Win7 bundle, see [`VideoRec_Win7打包经验.md`](Video
 | [**src/使用说明书.md**](src/使用说明书.md) | 🇨🇳 中文 | Full user manual: install, UI, four-channel workflow, troubleshooting |
 | [**VideoRec_Win7开发记录.md**](VideoRec_Win7开发记录.md) | 🇨🇳 中文 | Development log from v10.14 onwards; root-cause notes for each bugfix |
 | [**VideoRec_Win7打包经验.md**](VideoRec_Win7打包经验.md) | 🇨🇳 中文 | PyInstaller Win10-build → Win7-run UCRT / api-ms-win-* packaging fixes |
-| [**开发方案_多摄像头与TTL同步.md**](开发方案_多摄像头与TTL同步.md) | 🇨🇳 中文 | Multi-camera architecture and TTL sync design proposal |
 
 ---
 
@@ -130,7 +129,7 @@ If you use VideoRec in your research, please cite:
 - **每路独立参考帧对齐**：每路自己的参考帧 + 半透明虚影叠加 + ORB 特征匹配，调机量化
 - **每路独立量化对比**：亮度差 / 对比度差 / 直方图相关性 / 过曝比例 / 模糊度，绿黄红信号
 - **鼠标区域触发**：框选屏幕上任一区域（如 fiberphotometry 开始按钮），点击即触发所有路同时录制
-- **帧级软件时间戳**：每帧写入系统时间戳到 sidecar CSV，跨设备数据对齐（**软件时间戳**，非硬件 TTL；硬件 TTL 方案见内部设计文档）
+- **帧级软件时间戳**：每帧写入系统时间戳到 sidecar CSV，跨设备数据对齐（**软件时间戳**，非硬件 TTL；硬件 TTL 同步方案见 [`开发方案_多摄像头与TTL同步.md`](开发方案_多摄像头与TTL同步.md)）
 - **行为备注**：F1-F9 实时打点，写入每路 meta.json
 - **离线 Win7 打包**：onedir 模式，目标机只需装 KB2999226 即可运行
 
@@ -156,7 +155,6 @@ python src/main.py
 | [📘 使用说明书](src/使用说明书.md) | 安装、界面、四路版使用流程、故障排除 |
 | [📗 开发记录](VideoRec_Win7开发记录.md) | v10.14 系列开发日志，每个 bug 的根因与修复 |
 | [📙 打包经验](VideoRec_Win7打包经验.md) | PyInstaller Win10 打包 → Win7 运行的 UCRT / api-ms-win-* 全套修复 |
-| [📕 多摄像头与TTL同步方案](开发方案_多摄像头与TTL同步.md) | 多摄像头架构与 TTL 同步设计 *(见下方内部设计文档章节)* |
 
 ### 版本号
 
