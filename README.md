@@ -96,12 +96,12 @@ If you use VideoRec in your research, please cite:
 
 ```bibtex
 @software{VideoRec,
-  author       = {Wang, Wei},
+  author       = {Wang, Wenting},
   title        = {VideoRec: 4-Channel USB Camera Recorder for Behavioral Neuroscience},
   version      = {v10.14.11},
   year         = {2026},
   url          = {https://github.com/ww-001/VideoRec},
-  note         = {Four-channel simultaneous USB recording with reference-frame alignment and TTL sync}
+  note         = {Four-channel simultaneous USB recording with per-channel reference-frame alignment and software timestamps}
 }
 ```
 
@@ -109,24 +109,24 @@ If you use VideoRec in your research, please cite:
 
 ## 📜 License
 
-[MIT](LICENSE) — Copyright © 2026 Wei Wang. See [LICENSE](LICENSE) for the full text.
+[MIT](LICENSE) — Copyright © 2026 Wenting Wang. See [LICENSE](LICENSE) for the full text.
 
 ---
 
 ## 中文简介
 
 **VideoRec（四路版）** 是面向小鼠行为学实验的四路 USB 摄像头同步录制工具。
-多进程采集架构（每路独立 worker 子进程），参考帧虚影对齐，鼠标区域点击触发，TTL 帧级时间戳。
-专为**离线 Win7 实验机**设计（PyInstaller onedir 打包 + UCRT 修补）。
+多进程采集架构（每路独立 worker 子进程），**每路独立**的参考帧虚影对齐，鼠标区域点击触发，软件帧级时间戳。
+主要在 **Windows 10/11** 上开发与运行，同时**兼容离线 Win7 实验机**（PyInstaller onedir 打包 + UCRT 修补）。
 
 ### 主要功能
 
 - **四路同步录制**：4 路 USB 摄像头同时录制，最高 800×600 @ 30 fps/路
 - **进程隔离**：每路独立子进程，单路崩溃不影响其他路（v10.14 多进程架构改造）
-- **参考帧对齐**：第一天参考帧 + 半透明虚影叠加 + ORB 特征匹配，调机量化
-- **量化对比**：亮度差 / 对比度差 / 直方图相关性 / 过曝比例 / 模糊度，绿黄红信号
+- **每路独立参考帧对齐**：每路自己的参考帧 + 半透明虚影叠加 + ORB 特征匹配，调机量化
+- **每路独立量化对比**：亮度差 / 对比度差 / 直方图相关性 / 过曝比例 / 模糊度，绿黄红信号
 - **鼠标区域触发**：框选屏幕上任一区域（如 fiberphotometry 开始按钮），点击即触发所有路同时录制
-- **TTL 同步**：每帧写入系统时间戳到 sidecar CSV，跨设备数据对齐
+- **帧级软件时间戳**：每帧写入系统时间戳到 sidecar CSV，跨设备数据对齐（**软件时间戳**，非硬件 TTL；硬件 TTL 方案见内部设计文档）
 - **行为备注**：F1-F9 实时打点，写入每路 meta.json
 - **离线 Win7 打包**：onedir 模式，目标机只需装 KB2999226 即可运行
 
@@ -147,7 +147,7 @@ python src/main.py
 | [📘 使用说明书](src/使用说明书.md) | 安装、界面、四路版使用流程、故障排除 |
 | [📗 开发记录](VideoRec_Win7开发记录.md) | v10.14 系列开发日志，每个 bug 的根因与修复 |
 | [📙 打包经验](VideoRec_Win7打包经验.md) | PyInstaller Win10 打包 → Win7 运行的 UCRT / api-ms-win-* 全套修复 |
-| [📕 多摄像头与TTL同步方案](开发方案_多摄像头与TTL同步.md) | 多摄像头架构与 TTL 同步设计 |
+| [📕 多摄像头与TTL同步方案](开发方案_多摄像头与TTL同步.md) | 多摄像头架构与 TTL 同步设计 *(见下方内部设计文档章节)* |
 
 ### 版本号
 
@@ -163,18 +163,18 @@ python src/main.py
 
 ```bibtex
 @software{VideoRec,
-  author       = {Wang, Wei},
+  author       = {Wang, Wenting},
   title        = {VideoRec: 四路 USB 摄像头同步录制工具（行为学神经科学）},
   version      = {v10.14.11},
   year         = {2026},
   url          = {https://github.com/ww-001/VideoRec},
-  note         = {多进程四路同步录制，参考帧虚影对齐，TTL 同步'}
+  note         = {多进程四路同步录制，每路独立参考帧虚影对齐，软件时间戳同步'}
 }
 ```
 
 ### License
 
-[MIT](LICENSE) — Copyright © 2026 Wei Wang. 完整条款见 [LICENSE](LICENSE)。
+[MIT](LICENSE) — Copyright © 2026 Wenting Wang. 完整条款见 [LICENSE](LICENSE)。
 
 ---
 
