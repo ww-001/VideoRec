@@ -151,12 +151,7 @@ class MainWindow(QMainWindow):
         return self.previews[self.current_idx]
 
     def _set_current(self, slot: int):
-        """切换当前选中路（点击预览触发）。
-
-        幂等：slot == current_idx 时也刷新高亮——启动时 current_idx 默认 0
-        （_refresh_camera_list 会调 _set_current(0)），若直接 return 则
-        Cam1 永远没有选中边框，直到点过其他路再切回才出现（用户踩过）。
-        """
+        """切换当前选中路（点击预览触发）。\n\n        幂等：slot == current_idx 时也刷新高亮——启动时 current_idx 默认 0\n        （_refresh_camera_list 会调 _set_current(0)），若直接 return 则\n        Cam1 永远没有选中边框，直到点过其他路再切回才出现（用户踩过）。\n        """
         if slot < 0 or slot >= len(self.previews):
             return
         if slot == self.current_idx:
@@ -304,10 +299,7 @@ class MainWindow(QMainWindow):
         exec_dialog(dlg)
 
     def _build_animal_box(self) -> QWidget:
-        """动物信息常驻面板：每路一个输入框，录制时自动写入 meta.json。
-
-        不弹窗不打断录制；某路空缺时录制开始给黄色警告（不阻止）。
-        """
+        """动物信息常驻面板：每路一个输入框，录制时自动写入 meta.json。\n\n        不弹窗不打断录制；某路空缺时录制开始给黄色警告（不阻止）。\n        """
         box = QGroupBox("动物信息（录制时写入 meta.json）")
         form = QFormLayout(box)
         self.animal_edits: list = []
@@ -421,11 +413,7 @@ class MainWindow(QMainWindow):
             pass
 
     def _refresh_recent_projects(self):
-        """从全局最近项目文件加载列表（不限项目根目录，跨盘可用）。
-
-        旧版只扫 exe 同目录 projects/ —— 用户项目建在 E 盘时列表永远
-        是空的（"最近项目没显示、下拉拉不动"）。改为记忆实际路径。
-        """
+        """从全局最近项目文件加载列表（不限项目根目录，跨盘可用）。\n\n        旧版只扫 exe 同目录 projects/ —— 用户项目建在 E 盘时列表永远\n        是空的（"最近项目没显示、下拉拉不动"）。改为记忆实际路径。\n        """
         self.recent_combo.clear()
         items = []
         try:
@@ -696,11 +684,7 @@ class MainWindow(QMainWindow):
     # ================= 摄像头 =================
 
     def _refresh_camera_list(self):
-        """检测可用摄像头并自动打开（最多 4 路，依次填满槽位）。
-
-        超过 4 个摄像头时：优先选择同型号数量最多的 4 个
-        （如 4 个同型号 USB CAMERA + 1 个其他型号 → 自动选 4 个同型号）。
-        """
+        """检测可用摄像头并自动打开（最多 4 路，依次填满槽位）。\n\n        超过 4 个摄像头时：优先选择同型号数量最多的 4 个\n        （如 4 个同型号 USB CAMERA + 1 个其他型号 → 自动选 4 个同型号）。\n        """
         try:
             idxs = list_cameras()
         except Exception:
@@ -740,8 +724,7 @@ class MainWindow(QMainWindow):
             pass
 
         # ⚠️ Win7 多路同型号摄像头：必须【同时启动】所有采集子进程
-        # （J2 式，start_delay=0），再统一等待就绪——"一个进程稳定持有
-        # 后另一个再打开"会持续失败（diag2 v1.5 K/L 实验：K 的"错峰"
+        # （J2 式，start_delay=0），再统一等待就绪——"一个进程稳定持有\n        # 后另一个再打开"会持续失败（diag2 v1.5 K/L 实验：K 的"错峰"
         # 成功其实是 A 还在重试中 B 就打开了 = 同时竞争；VideoRec 原先
         # 的错峰 6 次重试也失败）。各子进程内部自带 6 次 x 3s 重试。
         pending = []
@@ -782,11 +765,7 @@ class MainWindow(QMainWindow):
             self._finish_camera_refresh()
 
     def _log_diag(self, msg: str) -> None:
-        """诊断日志（写 exe 旁 videorec_error.log，Win7 现场可查）。
-
-        ⚠️ 打开失败/超时/进程退出必须落盘——之前只改界面标签，
-        用户贴回来的 log 里只有"启动子进程"行，失败原因全丢了。
-        """
+        """诊断日志（写 exe 旁 videorec_error.log，Win7 现场可查）。\n\n        ⚠️ 打开失败/超时/进程退出必须落盘——之前只改界面标签，\n        用户贴回来的 log 里只有"启动子进程"行，失败原因全丢了。\n        """
         try:
             base = os.path.dirname(os.path.abspath(sys.executable))
             path = os.path.join(base, "videorec_error.log")
@@ -796,11 +775,7 @@ class MainWindow(QMainWindow):
             pass
 
     def _poll_pending_cams(self):
-        """轮询待就绪摄像头（主线程，每 500ms）：就绪→收尾；报错/超时→标记失败。
-
-        不阻塞 UI：每个 pending 只做非阻塞检查；wait_ready(timeout=0.5)
-        仅在状态已 READY 时才会返回（立即），ST_ERROR 时立即抛错。
-        """
+        """轮询待就绪摄像头（主线程，每 500ms）：就绪→收尾；报错/超时→标记失败。\n\n        不阻塞 UI：每个 pending 只做非阻塞检查；wait_ready(timeout=0.5)\n        仅在状态已 READY 时才会返回（立即），ST_ERROR 时立即抛错。\n        """
         if not self._pending_cams:
             self._finish_camera_refresh()
             return
@@ -980,12 +955,8 @@ class MainWindow(QMainWindow):
         return self._open_camera_slot(index, self.current_idx, width, height, fps)
 
     def _reopen_camera_for_settings(self):
-        """分辨率/帧率变化 -> 用新参数重开当前路摄像头（录制中禁止）。
-
-        若摄像头不接受请求参数（set 静默失败、悄悄回退成别的分辨率），
-        弹窗明确警告——这正是之前"设了 720p 实际输出 1080p 导致带宽
-        雪崩丢帧"事故的诱因，状态栏小字容易被忽略。
-        """
+        """分辨率/帧率变化 -> 用新参数重开当前路摄像头（录制中禁止）。\n\n        若摄像头不接受请求参数（set 静默失败、悄悄回退成别的分辨率），\n        弹窗明确警告——这正是之前"设了 720p 实际输出 1080p 导致带宽
+        雪崩丢帧"事故的诱因，状态栏小字容易被忽略。\n        """
         if self.camera is None:
             return
         if self._recording:
@@ -1015,10 +986,7 @@ class MainWindow(QMainWindow):
             self.status_label.setText(f"⚠ Cam {slot}: {detail}（可手动拖曝光滑杆）")
 
     def _auto_restore_camera_props(self):
-        """摄像头连接后自动恢复已保存的画面参数（仅滑杆项，不重开摄像头）。
-
-        优先项目参数文件，其次程序目录全局参数。
-        """
+        """摄像头连接后自动恢复已保存的画面参数（仅滑杆项，不重开摄像头）。\n\n        优先项目参数文件，其次程序目录全局参数。\n        """
         candidates = []
         if getattr(self, "project_dir", None):
             candidates.append(Path(self.project_dir) / "camera_params.json")
@@ -1036,6 +1004,225 @@ class MainWindow(QMainWindow):
                 pass
 
     # ================= 项目 =================
+
+    # ================= 录制 =================
+
+    def _toggle_record(self, from_trigger: bool = False):
+        """v10.14.16: 切换录制状态。所有 except 都 log 出来，不静默吞。"""
+        if self._recording:
+            self._stop_recording()
+        else:
+            self._start_recording(from_trigger=from_trigger)
+
+    def _on_schedule_record(self):
+        """v10.14.16: 定时录制——点击后延迟 N 秒开始。"""
+        if self._recording:
+            QMessageBox.information(self, "提示", "正在录制中，不能定时（先停止录制）")
+            return
+        if self._sched_timer is not None:
+            self._sched_timer.stop()
+            self._sched_timer = None
+            self.sched_btn.setText("定时录制")
+            self.status_label.setText("已取消定时录制")
+            return
+        if self.project is None:
+            QMessageBox.warning(self, "提示", "请先创建/打开项目")
+            return
+        # v10.14.16: 录制前先让晚到的 worker 有机会就绪（v10.14.14 helper）
+        self._wait_for_pending_slots(max_wait_s=5.0)
+
+        if not any(self.cameras):
+            QMessageBox.warning(self, "提示", "摄像头未连接")
+            return
+        delay = self.delay_spin.value()
+        if delay <= 0:
+            self._start_recording()
+            return
+        self.sched_btn.setText("取消定时")
+        self.status_label.setText(f"[定时] {delay} 秒后自动开始录制...（再点【取消定时】可取消）")
+        from qt_compat import QTimer as _T
+        self._sched_timer = _T(self)
+        self._sched_timer.setSingleShot(True)
+        self._sched_timer.timeout.connect(self._sched_fire)
+        self._sched_timer.start(delay * 1000)
+
+    def _sched_fire(self):
+        self._sched_timer = None
+        self.sched_btn.setText("定时录制")
+        if self._recording:
+            return
+        self._start_recording()
+
+    def _wait_for_pending_slots(self, max_wait_s: float = 5.0):
+        """v10.14.16 保留 v10.14.14 引入的 helper：录制启动前快速等待晚到的 worker。\n\n        rec-check 阶段：每个 cameras[slot] is None 的槽位，看 _pending_cams 里是否有等待；\n        主动调一次 _poll_pending_cams 把刚 READY 的 cam 同步进 self.cameras；\n        短轮询等待（每 100ms）直到 max_wait_s 或全部就绪 / 失败。\n        失败/超时/异常都只 log——让调用方继续走原来的 slots 逻辑。\n        """
+        from qt_compat import QApplication
+        import time as _t
+        if not getattr(self, "_pending_cams", None):
+            return
+        deadline = _t.time() + max_wait_s
+        pending_slots = {p[0] for p in self._pending_cams}
+        target_slots = {i for i in range(4) if self.cameras[i] is None and i in pending_slots}
+        if not target_slots:
+            return
+        self._log_diag("录制前快速等待: pending slots=%s, max_wait=%.1fs"
+                       % (sorted(target_slots), max_wait_s))
+        last_report = 0.0
+        while _t.time() < deadline:
+            try:
+                self._poll_pending_cams()
+            except Exception:
+                pass
+            still = {i for i in target_slots if self.cameras[i] is None}
+            if not still:
+                break
+            now = _t.time()
+            if now - last_report >= 1.0:
+                self._log_diag("  快速等待中，仍未就绪: %s" % sorted(still))
+                last_report = now
+            QApplication.processEvents()
+            _t.sleep(0.1)
+        else:
+            still = {i for i in target_slots if self.cameras[i] is None}
+            if still:
+                self._log_diag("录制前快速等待超时: 仍未就绪 %s" % sorted(still))
+
+
+    def _start_recording(self, from_trigger: bool = False):
+        """v10.14.16: 4 路同时录制。recorder 创建循环里所有 except 都 log 出来。\n\n        修复点（v10.14.15 bug）：旧版 silent catch 把 4 路中随机 1 路\n        recorder 创建异常吞掉，导致 4 路预览都好但只有 3 路有文件。\n        v10.14.16 改成：捕获异常 → log 到 videorec_error.log → 弹窗告警。\n        """
+        if self._recording:
+            return
+        if self.project is None:
+            QMessageBox.warning(self, "提示", "请先创建/打开项目")
+            return
+        if not any(self.cameras):
+            QMessageBox.warning(self, "提示", "摄像头未连接")
+            return
+
+        # 预览降频：录时 200ms(5fps)，省 CPU 给录像线程
+        if self.timer is not None:
+            self.timer.stop()
+            self.timer.start(200)
+
+        self._recorders = []
+        self._recorder_threads = []
+        self._recorder_slot_map = {}
+
+        out_dir = self.projects.recordings_dir(self.project)
+        try:
+            out_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            QMessageBox.critical(self, "无法创建录制目录", f"{out_dir}\n{e}")
+            if self.timer is not None:
+                self.timer.stop()
+                self.timer.start(150)
+            return
+
+        n_ok = 0
+        n_fail = []
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        for slot in range(4):
+            cam = self.cameras[slot] if slot < len(self.cameras) else None
+            if cam is None:
+                continue
+            try:
+                aw = int(cam.get_prop(3) or 800)   # CAP_PROP_FRAME_WIDTH
+                ah = int(cam.get_prop(4) or 600)   # CAP_PROP_FRAME_HEIGHT
+                afps = float(cam.get_prop(5) or 30.0)  # CAP_PROP_FPS
+                name = f"test_Cam{slot + 1}_{ts}"
+                meta_extra = {
+                    "cam": slot + 1,
+                    "animal": self._animal_map.get(slot, ""),
+                }
+                rec = Recorder(cam, out_dir, name, fps=afps, fourcc="MJPG", meta_extra=meta_extra)
+                rec.start(aw, ah)
+                thread = RecorderThread(rec, parent=self)
+                thread.start()
+                self._recorders.append(rec)
+                self._recorder_threads.append(thread)
+                self._recorder_slot_map[slot] = thread
+                n_ok += 1
+            except Exception as e:
+                # v10.14.16 关键修复：log 出来 + 记到 UI，不再静默吞
+                err_msg = traceback.format_exc()
+                self._log_diag("slot=%d recorder 创建失败: %s\n%s" % (slot, e, err_msg))
+                n_fail.append((slot + 1, str(e)))
+
+        if n_ok == 0:
+            QMessageBox.critical(self, "录制启动失败",
+                                 "所有摄像头 recorder 创建都失败:\n" +
+                                 "\n".join(f"Cam {s}: {e}" for s, e in n_fail))
+            self._recorders = []
+            self._recorder_threads = []
+            self._recorder_slot_map = {}
+            if self.timer is not None:
+                self.timer.stop()
+                self.timer.start(150)
+            return
+
+        if n_fail:
+            warn_msg = "\n".join(f"Cam {s}: {e}" for s, e in n_fail)
+            QMessageBox.warning(self, "部分录制启动失败",
+                                f"{n_ok} 路成功启动，{len(n_fail)} 路失败:\n{warn_msg}")
+            self._log_diag("recording start partial: %d ok, %d fail" % (n_ok, len(n_fail)))
+
+        self._recording = True
+        self._rec_start_time = time.time()
+        self._rec_duration_limit = self.duration_spin.value()  # v10.14.16-hotfix: 读 duration 限制
+        self._drop_warned = False
+        self._auto_stop_reason = None
+
+        self.record_btn.setText("■ 停止录制")
+        self.record_btn.setStyleSheet("background:#27ae60; color:white; font-weight:bold; padding:6px 16px;")
+        self.status_label.setText(f"● 录制中：{n_ok} 路" +
+                                  (f"（{len(n_fail)} 路失败）" if n_fail else ""))
+
+        self._log_diag("recording started: %d cams (of %d connected)" %
+                       (n_ok, sum(1 for c in self.cameras if c is not None)))
+
+    def _stop_recording(self):
+        """v10.14.16: 停止所有路 recorder，等待线程退出。"""
+        if not self._recording:
+            return
+
+        self._recording = False
+
+        all_stats = {}
+        for slot in sorted(self._recorder_slot_map.keys()):
+            thread = self._recorder_slot_map[slot]
+            try:
+                stats = thread.stop_and_wait(timeout_ms=5000)
+                if stats:
+                    all_stats[slot] = stats
+                    self._log_diag("rec-stop slot=%d: %d frames @ %s" %
+                                   (slot, stats.get("frames", 0), stats.get("actual_fps", 0)))
+            except Exception as e:
+                err_msg = traceback.format_exc()
+                self._log_diag("rec-stop slot=%d 异常: %s\n%s" % (slot, e, err_msg))
+
+        n = len(all_stats)
+        total_frames = sum(s.get("frames", 0) for s in all_stats.values())
+        avg_fps = sum(s.get("actual_fps", 0) for s in all_stats.values()) / max(n, 1)
+
+        if self._auto_stop_reason:
+            self.status_label.setText(f"录制停止（{self._auto_stop_reason}）：{n} 路 {total_frames} 帧")
+        else:
+            self.status_label.setText(f"■ 录制完成：{n} 路 / {total_frames} 帧 / 平均 {avg_fps:.1f}fps")
+
+        self.record_btn.setText("● 开始录制")
+        self.record_btn.setStyleSheet("background:#e74c3c; color:white; font-weight:bold; padding:6px 16px;")
+
+        if self.timer is not None:
+            self.timer.stop()
+            self.timer.start(150)
+
+        self._recorders = []
+        self._recorder_threads = []
+        self._recorder_slot_map = {}
+        self._rec_start_time = 0.0
+        self._auto_stop_reason = None
+
+        self._log_diag("recording stopped: %d cams, %d total frames" % (n, total_frames))
+
 
     def _create_project(self):
         """弹出新建项目对话框（实验信息/装置/路径）。"""
@@ -1122,11 +1309,7 @@ class MainWindow(QMainWindow):
     # ================= 参考帧 =================
 
     def _ref_mgr(self, slot: int = None):
-        """获取指定路（默认当前路）的参考帧管理器，懒创建。
-
-        每路独立参考帧：slot -> ReferenceManager，文件按槽位区分
-        （reference_cam1.png ... reference_cam4.png），互不干扰。
-        """
+        """获取指定路（默认当前路）的参考帧管理器，懒创建。\n\n        每路独立参考帧：slot -> ReferenceManager，文件按槽位区分\n        （reference_cam1.png ... reference_cam4.png），互不干扰。\n        """
         if self.project_dir is None:
             return None
         s = self.current_idx if slot is None else slot
@@ -1205,295 +1388,6 @@ class MainWindow(QMainWindow):
             self._trigger_overlay.flash()
 
     # ================= 录制 =================
-
-    def _on_schedule_record(self):
-        """定时录制：延迟 N 秒后自动开始；倒计时中再点 = 取消。"""
-        if self._recording:
-            QMessageBox.information(self, "提示", "正在录制中，不能定时（先停止录制）")
-            return
-        if self._sched_timer is not None:
-            self._sched_timer.stop()
-            self._sched_timer = None
-            self.sched_btn.setText("定时录制")
-            self.status_label.setText("已取消定时录制")
-            return
-        if self.project is None:
-            QMessageBox.warning(self, "提示", "请先创建/打开项目")
-            return
-        if not any(self.cameras):
-            if getattr(self, "_pending_cams", None):
-                QMessageBox.warning(
-                    self, "提示",
-                    "摄像头正在打开中（可能需要 1-2 分钟）…\n\n"
-                    "请等待界面出现画面后再点击录制。\n"
-                    "（状态栏会显示打开进度）")
-            else:
-                QMessageBox.warning(self, "提示", "摄像头未连接")
-            return
-        delay = self.delay_spin.value()
-        if delay <= 0:
-            self._start_recording()
-            return
-        self.sched_btn.setText("取消定时")
-        self.status_label.setText(
-            f"[定时] {delay} 秒后自动开始录制...（再点【取消定时】可取消）")
-        self._sched_timer = QTimer(self)
-        self._sched_timer.setSingleShot(True)
-        self._sched_timer.timeout.connect(self._sched_fire)
-        self._sched_timer.start(delay * 1000)
-
-    def _sched_fire(self):
-        """定时到点：开始录制（若此时正在录则忽略）。"""
-        self._sched_timer = None
-        self.sched_btn.setText("定时录制")
-        if self._recording:
-            return
-        self._start_recording()
-
-    def _toggle_record(self, from_trigger: bool = False):
-        if self._recording:
-            self._stop_recording()
-        else:
-            self._start_recording(from_trigger=from_trigger)
-
-    def _start_recording(self, from_trigger: bool = False):
-        if not any(self.cameras):
-            if getattr(self, "_pending_cams", None):
-                QMessageBox.warning(
-                    self, "提示",
-                    "摄像头正在打开中（可能需要 1-2 分钟）…\n\n"
-                    "请等待界面出现画面后再点击录制。\n"
-                    "（状态栏会显示打开进度）")
-            else:
-                QMessageBox.warning(self, "提示", "摄像头未连接")
-            return
-        # 清除未决的定时倒计时（手动开始 = 取消定时）
-        if self._sched_timer is not None:
-            self._sched_timer.stop()
-            self._sched_timer = None
-            self.sched_btn.setText("定时录制")
-        if self.project is None:
-            QMessageBox.warning(self, "提示", "请先创建/打开项目")
-            return
-        out_dir = self.projects.recordings_dir(self.project)
-        out_dir.mkdir(parents=True, exist_ok=True)
-
-        # ---- 磁盘空间预检：录制是持续写盘，空间不足会导致文件损坏
-        # （AVI 尾部缺帧 + meta/timestamps 写坏，用户踩过坑）----
-        import shutil
-        try:
-            free_b = shutil.disk_usage(out_dir).free
-            if free_b < 200 * 1024 * 1024:
-                QMessageBox.warning(
-                    self, "磁盘空间不足",
-                    f"录制目录所在盘剩余空间仅 {free_b / 1024 / 1024:.0f} MB，\n"
-                    f"不足以安全录制（建议保留 ≥200MB）。\n"
-                    f"请清理磁盘后重试。")
-                return
-        except Exception:
-            pass
-
-        # ---- 动物信息：取面板当前值（常驻面板，不弹窗不打断）----
-        for slot in range(4):
-            self._animal_map[slot] = self.animal_edits[slot].text().strip()
-        slots = [i for i, c in enumerate(self.cameras) if c is not None]
-        missing = [s + 1 for s in slots if not self._animal_map.get(s)]
-        animals = dict(self._animal_map)
-
-        # ---- 开始录制：<项目名>_CamN_<时间戳>，编号 = 槽位号，与预览标签一一对应 ----
-        stamp = time.strftime("%Y%m%d_%H%M%S")
-        proj_name = (self.project.name or "rec").strip()
-        fps = float(self.settings_panel.fps_combo.currentText())
-        # ⚠️ fps<=0 防御（Win7 DSHOW 读回 0 曾导致 2.2/fps 除零崩溃）
-        if fps <= 0:
-            fps = 30.0
-        # 期望分辨率：设置面板当前选择（可能已被摄像头实际值同步，见 _load_from_camera）
-        exp_w, exp_h = self.settings_panel.selected_resolution()
-        self._recorders = []
-        self._recorder_threads = []
-        self._recorder_slot_map = {}   # slot -> RecorderThread（录制预览按槽位推送）
-        ok_count = 0
-        stream_warns = []   # 流配置未恢复的提示
-        # ⚠️ 各路并行启动：ensure_stream_config 的 set(FOURCC) 可能触发
-        # 流重启阻塞数秒（固件响应慢）。串行启动会让后面的路跟着晚开始
-        # ——实测 2 路时 Cam2 比 Cam1 晚 ~2.5s（用户误判为丢帧），4 路
-        # 会更严重。并行后总启动时间 = 最慢一路，而不是各路之和。
-        import threading as _th
-        _launch_results = {}
-        _launch_lock = _th.Lock()
-
-        def _launch_one(slot, cam, name):
-            try:
-                # 录制前恢复流配置（MJPG+分辨率+帧率）——调参可能把
-                # FOURCC/分辨率协商搞丢（回退 YUY2 未压缩 → 带宽爆 → 掉帧）。
-                # ⚠️ 非致命：Win7 上 ENSURE（set FOURCC 触发流重启）可能
-                # 阻塞超时——配置恢复失败就用子进程实际流参数继续录，
-                # 绝不让"锦上添花"的配置恢复阻塞/放弃录制。
-                ok_cfg, aw, ah, afps = False, 0, 0, 0
-                try:
-                    ok_cfg, aw, ah, afps = cam.ensure_stream_config(
-                        exp_w, exp_h, fps, timeout=25.0)
-                except Exception:
-                    ok_cfg, aw, ah, afps = False, 0, 0, 0
-                if not ok_cfg or not (aw and ah):
-                    aw, ah, afps = getattr(cam, "actual", (0, 0, 0))
-                    if not (aw and ah):
-                        aw, ah, afps = exp_w, exp_h, fps
-                rec = Recorder(cam, out_dir, name, fps=fps,
-                               meta_extra={"cam": slot + 1,
-                                           "animal": animals.get(slot, "")})
-                # 用 ensure 读回的实际分辨率建 writer（不要同步 read()——
-                # DSHOW 首帧可能阻塞数秒，会拖慢启动）
-                rec.start(aw, ah)
-                rt = RecorderThread(rec)
-                with _launch_lock:
-                    _launch_results[slot] = (rec, rt, ok_cfg, aw, ah, afps, None)
-            except Exception as e:
-                with _launch_lock:
-                    _launch_results[slot] = (None, None, False, 0, 0, 0, str(e))
-
-        _slots = [s for s, c in enumerate(self.cameras) if c is not None]
-        _names = {s: f"{proj_name}_Cam{s + 1}_{stamp}" for s in _slots}
-        _workers = [_th.Thread(target=_launch_one, args=(s, self.cameras[s], _names[s]),
-                               daemon=True) for s in _slots]
-        for _t in _workers:
-            _t.start()
-        for _t in _workers:
-            _t.join()
-
-        for slot in _slots:
-            rec, rt, ok_cfg, aw, ah, afps, err = _launch_results[slot]
-            if err is not None:
-                self.status_label.setText(f"Cam {slot + 1} 录制失败: {err}")
-                continue
-            if not ok_cfg:
-                stream_warns.append(
-                    f"Cam{slot + 1} 请求 {exp_w}x{exp_h}@{fps:.0f}，"
-                    f"实际 {aw}x{ah}@{afps:.0f}")
-            # 录制线程每帧直接推送到对应槽位预览（双路径：
-            # 信号直推 + _tick 轮询 latest_frame 兜底）。
-            # ⚠️ 不能靠 enumerate(_recorder_threads) 推断槽位——
-            # cameras 有空洞时下标会错位，非选中路画面停更。
-            rt.frame_ready.connect(
-                lambda f, s=slot: self.previews[s].update_frame(f, f, ""))
-            rt.start()
-            self._recorders.append(rec)
-            self._recorder_threads.append(rt)
-            self._recorder_slot_map[slot] = rt
-            self.previews[slot].set_recording(True)
-            ok_count += 1
-        if ok_count == 0:
-            self._recorders = []
-            self._recorder_threads = []
-            # 合并每路失败原因到弹窗（之前只写状态栏，现场看不到）
-            _errs = []
-            for _s in _slots:
-                _r = _launch_results.get(_s)
-                if _r and _r[6]:
-                    _errs.append(f"Cam {_s + 1}: {_r[6]}")
-            _detail = "\n".join(_errs) if _errs else "（无失败详情）"
-            QMessageBox.warning(self, "录制失败",
-                                "所有摄像头均无法录制：\n" + _detail)
-            return
-        self._recording = True
-        self._drop_warned = False
-        self._rec_start_time = time.time()
-        self._rec_duration_limit = self.duration_spin.value()  # 秒，0 = 不限
-        self._tick_count = 0
-        # v10.14.11：录像中预览降到 200ms(5fps)。录像由 worker 独立写盘，
-        # 预览降帧只省 CPU 不影响录像质量（Win7 老 CPU 关键优化）。
-        self.timer.start(200)
-        self.record_btn.setText("■ 停止录制")
-        self.record_btn.setStyleSheet("background:#2ecc71; color:white; font-weight:bold; padding:6px 16px;")
-        warn_txt = f" | ⚠ Cam {', '.join(map(str, missing))} 动物信息未填" if missing else ""
-        if stream_warns:
-            warn_txt += " | ⚠ " + "; ".join(stream_warns)
-        if self._rec_duration_limit > 0:
-            self.status_label.setText(
-                f"● 录制中 {ok_count} 路 | 时长上限 {self._rec_duration_limit}s{warn_txt}")
-        else:
-            self.status_label.setText(
-                f"录制中... {ok_count} 路 | {proj_name}_Cam1~{ok_count}_{stamp}{warn_txt}")
-        if missing:
-            self.status_label.setStyleSheet("color:#e67e22; font-weight:bold;")
-            from qt_compat import QTimer as _T
-            _T.singleShot(6000, lambda: self.status_label.setStyleSheet(""))
-        if self._trigger_overlay is not None:
-            self._trigger_overlay.setRecording(True)
-        # 录制中禁用参数面板：set_prop 可能干扰录制线程读帧/触发流重启
-        # （FOURCC 丢失回退 YUY2 → 带宽爆 → 掉帧）。要调参请先停止录制。
-        self.settings_panel.setEnabled(False)
-
-    def _stop_recording(self):
-        if not self._recorders and not self._recorder_threads:
-            return
-        total_frames = 0
-        total_drops = 0
-        total_dur = 0.0
-        notes_total = 0
-        all_stats = []
-        write_errors = []   # 录制中写盘异常（磁盘满/IO 错误）
-        for slot, rt in enumerate(self._recorder_threads):
-            if rt is not None:
-                stats = rt.stop_and_wait()
-                if rt.error:
-                    write_errors.append(f"Cam{slot + 1}: {rt.error}")
-                if stats:
-                    all_stats.append(stats)
-                    total_frames += stats.get("frames", 0)
-                    total_drops += stats.get("drops", 0)
-                    total_dur = max(total_dur, stats.get("duration_s", 0))
-                    notes_total += stats.get("notes", 0)
-        self._recorders = []
-        self._recorder_threads = []
-        self._recorder_slot_map = {}
-        for pw in self.previews:
-            pw.set_recording(False)
-        self._recording = False
-        self.record_btn.setText("● 开始录制")
-        self.record_btn.setStyleSheet("background:#e74c3c; color:white; font-weight:bold; padding:6px 16px;")
-        self.settings_panel.setEnabled(True)   # 恢复参数面板
-        # v10.14.11：停止后恢复待机预览帧率（触发区继续检测，可再次触发）
-        self.timer.start(150)
-        if self._trigger_overlay is not None:
-            self._trigger_overlay.setRecording(False)
-        if all_stats:
-            # 回显每路 animal（编号对应关系一目了然）
-            animal_txt = " | ".join(
-                f"Cam{k + 1}: {v}" for k, v in sorted(self._animal_map.items())
-                if v and k + 1 <= len(all_stats))
-            msg = (f"录制完成: {len(all_stats)} 路 | 共 {total_frames} 帧, {total_dur:.1f}s, "
-                   f"总丢帧 {total_drops}, 备注 {notes_total} 条")
-            # 兼容写入器回退提示（Win7 ffmpeg 不可用时自动启用）
-            if any(s.get("writer_fallback") for s in all_stats):
-                msg += ("\n（兼容写入模式：系统编码器不可用，已用内置写入器，"
-                        "文件为标准 MJPG AVI，可正常播放）")
-            if animal_txt:
-                msg += f"\n{animal_txt}"
-            # 写盘异常（磁盘满等）单独警示——这是文件损坏的元凶
-            if write_errors:
-                msg += "\n\n⚠ 写盘异常（文件可能不完整）：\n" + "\n".join(write_errors)
-            self.status_label.setText(msg)
-            # 自动停止（定时时长到点）时保留原因
-            if getattr(self, "_auto_stop_reason", None):
-                self.status_label.setText(f"[自动停止] {self._auto_stop_reason} | {msg}")
-                self._auto_stop_reason = None
-            if total_drops > total_frames * 0.01 and total_frames > 0:
-                # 每路实际分辨率（recorder 统计的是真实写入尺寸，不是请求值）
-                res_lines = []
-                for k, s in enumerate(all_stats):
-                    w = s.get("width", 0)
-                    h = s.get("height", 0)
-                    res = f"{w}x{h}" if w and h else "?"
-                    res_lines.append(f"  Cam{k + 1}: {res}（{s.get('frames', 0)} 帧, "
-                                     f"丢 {s.get('drops', 0)}, 实际 "
-                                     f"{s.get('actual_fps', 0):.1f} fps）")
-                QMessageBox.warning(self, "丢帧警告",
-                                    f"总丢帧 {total_drops} 帧 ({total_drops / max(total_frames, 1) * 100:.1f}%)，"
-                                    "建议降低分辨率或帧率\n\n"
-                                    "各路实际分辨率：\n" + "\n".join(res_lines))
-
-    # ================= 主循环 =================
 
     def _tick(self):
         """定时器：各路读帧 -> 虚影叠加 -> 分析 -> 显示。"""

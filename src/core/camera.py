@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """摄像头枚举、参数控制与参数快照。
 
 UVC 免驱摄像头通过 OpenCV VideoCapture 直接访问。
@@ -98,17 +98,19 @@ class Camera:
         USB2.0 带宽 → read() 阻塞 1s/帧 → 预览冻结。
         实测：正确顺序下 4 路 1920x1080@30 MJPG = 29.4fps 全部跑满。
 
-        ⚠️ 后端选择（Win7 黑屏坑）：OpenCV 4.8 在 Windows 上默认优先
-        MSMF（Media Foundation）后端，但 MSMF 在 Win7 SP1 上对多数
-        UVC 摄像头兼容性差：isOpened() 返回 True 但 read() 一直失败
-        → 预览全黑且无报错。因此先强制试 DirectShow (CAP_DSHOW)，
-        失败再回退默认（MSMF/ANY），保证 Win7 与 Win10 都能出画面。
+        ⚠️ 后端选择（v10.14.16 改）：强制只用 DSHOW，禁止 MSMF fallback。
+        原因：Win10 MSMF 后端在 4 路同型号 USB 摄像头（每路一个独立子进程）
+        场景下有"互挤" bug——4 路中随机 1 路 MSMF open 成功但 read() 长期
+        失败，preview 看似有画面但 recorder 拿不到稳定帧 → 1 路永远漏录。
+        Win7 上 MSMF 不可用反而绕开这个 bug（DSHOW 在 Win7 一直 OK），
+        Win10 切回 DSHOW 后由多进程架构负责隔离同型号摄像头的 DSHOW 限制。
         """
-        # 后端候选：Win7 首选 DSHOW，其次默认；每个候选都做真实 read 验证
-        # （isOpened() 为 True 不代表能出帧，必须试读一帧）
+        # v10.14.16: 强制 DSHOW，禁止 MSMF fallback。Win10 MSMF 在 4 路
+        # 同型号摄像头（每路一个独立子进程）下有互挤 bug——4 路中随机 1
+        # 路"open 成功但 read 长期失败" → 1 路永远漏录。多进程架构（每
+        # 路一个独立子进程）专门为绕开 DSHOW 同型号互挤设计，强制 DSHOW
+        # 是正确选择。
         backends = [cv2.CAP_DSHOW]  # 700 = DirectShow
-        if sys.platform.startswith("win"):
-            backends.append(cv2.CAP_ANY)  # 0 = 默认（MSMF 等）
         self.cap = None
         last_err = None
         for b in backends:
@@ -135,7 +137,7 @@ class Camera:
             cap.release()
         if self.cap is None:
             raise CameraError(
-                f"无法打开摄像头 #{self.index}（后端 DSHOW/MSMF 均失败"
+                f"无法打开摄像头 #{self.index}（后端 DSHOW 失败"
                 + (f": {last_err}" if last_err else "") + "）")
 
         # 格式/分辨率设置（v10.14.6 双 set 策略）：
@@ -330,6 +332,73 @@ class Camera:
             return None
         ok, frame = self.cap.read()
         return frame if ok else None
+
+    def probe_real_fps(self, seconds: float = 3.0, min_frames: int = 30) -> dict:
+        """实测当前配置下的真实出帧率，并判断是「固件锁帧」还是「传输掉帧」。
+
+        返回：dict(reach, fps, stable, verdict, detail)
+          - fps    : 采样窗口内实测帧率
+          - stable : 帧间隔变异系数 (std/mean)。固件锁帧时极稳定(<0.15)，
+                     传输掉帧/带宽竞争时抖动大(>0.3)。
+          - verdict: "ok"（接近目标）/ "locked"（固件锁帧）/ "unstable"（传输掉帧）
+          - detail : 人类可读建议
+        判定依据：目标 = 当前 CAP_PROP_FPS 读回值（固件报告的帧率）。
+        """
+        import time
+        if self.cap is None or not self.cap.isOpened():
+            return {"ok": False, "fps": 0.0, "stable": 1.0,
+                    "verdict": "error", "detail": "摄像头未打开"}
+        target = float(self.cap.get(cv2.CAP_PROP_FPS) or 0)
+        if target <= 0:
+            target = 30.0
+        # 限制内部缓冲区大小，测真实出帧节拍而非缓冲补帧
+        try:
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        except Exception:
+            pass
+        intervals = []
+        t0 = time.perf_counter()
+        prev = None
+        n = 0
+        while True:
+            ok, _ = self.cap.read()
+            now = time.perf_counter()
+            if not ok:
+                time.sleep(0.002)
+                continue
+            if prev is not None:
+                intervals.append(now - prev)
+            prev = now
+            n += 1
+            if now - t0 >= seconds and n >= min_frames:
+                break
+            if now - t0 >= seconds * 4:  # 防死循环：怎么也到不了 min_frames
+                break
+        dur = time.perf_counter() - t0
+        fps = n / dur if dur > 0 else 0.0
+        stable = 1.0
+        if len(intervals) >= 3:
+            mean = sum(intervals) / len(intervals)
+            if mean > 0:
+                var = sum((x - mean) ** 2 for x in intervals) / len(intervals)
+                stable = (var ** 0.5) / mean
+        # 判定
+        if target > 0 and fps >= target * 0.9:
+            verdict, detail = "ok", f"真实帧率 {fps:.1f}fps，达标（目标{target:.0f}fps）"
+        elif stable < 0.25:
+            verdict = "locked"
+            detail = (f"≈{fps:.1f}fps（目标{target:.0f}fps，间隔极稳定=固件锁帧，" 
+                      f"非传输问题，改分辨率为更低也不变量级）")
+        elif stable >= 0.25:
+            verdict = "unstable"
+            detail = (f"真实{fps:.1f}fps（目标{target:.0f}fps，间隔抖动大）——"
+                      f"疑似带宽/竞争掉帧，可试降分辨率或分散USB控制器")
+        else:
+            verdict, detail = "low", f"真实帧率仅 {fps:.1f}fps"
+        return {
+            "ok": True, "fps": round(fps, 1), "stable": round(stable, 3),
+            "verdict": verdict, "detail": detail,
+        }
 
     # ---------- 参数 ----------
 
@@ -904,6 +973,67 @@ class WorkerCamera:
                 return frame
             time.sleep(0.002)
         return None
+
+    def probe_real_fps(self, seconds: float = 3.0, min_frames: int = 30) -> dict:
+        """实测当前配置下的真实出帧率（多路共享内存视角）。
+
+        与 Camera.probe_real_fps 语义一致：测的是 worker→主进程的真实吞吐，
+        返回 dict(ok, fps, stable, verdict, detail)。判定同上。
+        """
+        import time as _t
+        if not self._opened or self._shm is None:
+            return {"ok": False, "fps": 0.0, "stable": 1.0,
+                    "verdict": "error", "detail": "摄像头未就绪"}
+        target = float(self._fps or 0)
+        if target <= 0:
+            target = 30.0
+        # 读完现有帧后，记录后续新帧的到达时刻（read 返回最新帧，可能跳帧）
+        # 记录的是新帧 PUBLISH 节拍，反映摄像头真实出帧率。
+        intervals = []
+        t0 = _t.perf_counter()
+        prev = None
+        n = 0
+        last_id = self._last_frame_id
+        # 先读一次，清掉手头可能残留的旧帧
+        self.read()
+        while True:
+            frame = self.read()
+            now = _t.perf_counter()
+            if frame is None:
+                _t.sleep(0.003)
+                continue
+            if prev is not None:
+                intervals.append(now - prev)
+            prev = now
+            n += 1
+            if now - t0 >= seconds and n >= min_frames:
+                break
+            if now - t0 >= seconds * 4:
+                break
+        dur = _t.perf_counter() - t0
+        fps = n / dur if dur > 0 else 0.0
+        stable = 1.0
+        if len(intervals) >= 3:
+            mean = sum(intervals) / len(intervals)
+            if mean > 0:
+                var = sum((x - mean) ** 2 for x in intervals) / len(intervals)
+                stable = (var ** 0.5) / mean
+        if target > 0 and fps >= target * 0.9:
+            verdict, detail = "ok", f"真实帧率 {fps:.1f}fps，达标（目标{target:.0f}fps）"
+        elif stable < 0.25:
+            verdict = "locked"
+            detail = (f"≈{fps:.1f}fps（目标{target:.0f}fps，间隔极稳定=固件锁帧，"
+                      f"非传输问题，降分辨率也不变量级）")
+        elif stable >= 0.25:
+            verdict = "unstable"
+            detail = (f"真实{fps:.1f}fps（目标{target:.0f}fps，间隔抖动大）——"
+                      f"疑似带宽/竞争掉帧，可试降分辨率或分散USB控制器")
+        else:
+            verdict, detail = "low", f"真实帧率仅 {fps:.1f}fps"
+        return {
+            "ok": True, "fps": round(fps, 1), "stable": round(stable, 3),
+            "verdict": verdict, "detail": detail,
+        }
 
     # ---------- 参数（走共享内存命令区） ----------
 

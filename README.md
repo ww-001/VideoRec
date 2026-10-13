@@ -1,8 +1,8 @@
-# VideoRec — 4-Channel USB Camera Recorder for Behavioral Neuroscience
+﻿# VideoRec — 4-Channel USB Camera Recorder for Behavioral Neuroscience
 
 > 🇨🇳 **中文版说明见下方「中文简介」段** / For Chinese users, see "中文简介" section below.
 
-**Latest stable:** v10.14.11 · **First release:** v10.10 · **Platform:** Windows 10/11 (primary) · Windows 7 SP1 (offline, compatible) · **Stack:** Python 3.8.10 + PyQt5 + OpenCV + PyInstaller
+**Latest stable:** v10.14.16 · **First release:** v10.10 · **Platform:** Windows 10/11 (primary) · Windows 7 SP1 (offline, compatible) · **Stack:** Python 3.8.10 + PyQt5 + OpenCV + PyInstaller
 
 A four-channel simultaneous USB camera recording tool for rodent behavioral experiments.
 Multi-process capture (one worker subprocess per channel) with **per-channel reference-frame ghost overlay for cross-session rig repeatability**, **mouse-region click triggering for software-level soft sync without hardware TTL**, and per-channel software frame timestamps for offline alignment.
@@ -29,10 +29,13 @@ Primary development on Windows 10/11, with **offline Windows 7 SP1 compatibility
 
 Download the **pre-built Windows package**:
 
-- 📦 **Direct download:** [**`VideoRec_win7_v10.14.11.zip`**](https://github.com/ww-001/VideoRec/releases/download/v10.14.11/VideoRec_win7_v10.14.11.zip) (≈200 MB)
+- 📦 **Direct download:** [**`VideoRec_win7_v10.14.16.zip`**](https://github.com/ww-001/VideoRec/releases/download/v10.14.16/VideoRec_win7_v10.14.16.zip) (≈200 MB)
 - 📋 **Browse all releases:** [**Releases page**](../../releases)
 
 After download: unzip → double-click `启动_Win7.bat`.
+
+
+> **Known limitation (v10.14.16):** 4 cameras at 1920x1080@30fps is USB-bandwidth-limited to ~10 fps per channel on both Win10 and Win7. **Use 1280x720@30fps for 4-cam full-rate recording** (verified in test7). See [CHANGELOG](CHANGELOG.md) for details.
 
 > **Target machine requirements:** Windows 7 SP1 (with `KB2999226` already installed for UCRT) or Windows 10/11 · USB 2.0/3.0 ports · UVC cameras (driver-free). For mouse-region trigger, **run both VideoRec and the trigger-target app as Administrator**.
 
@@ -89,7 +92,7 @@ This project follows `vMAJOR.MINOR.PATCH`:
 - **MINOR** — feature addition or major bugfix (e.g. v10.14.0 → v10.14.1)
 - **PATCH** — packaging / docs / minor fix
 
-Latest: **v10.14.11** (2026-08-13) — see [Releases](../../releases) for changelog.
+Latest: **v10.14.16** (2026-10-13) — see [Releases](../../releases) for changelog.
 
 ---
 
@@ -101,7 +104,7 @@ If you use VideoRec in your research, please cite:
 @software{VideoRec,
   author       = {Wang, Wenting},
   title        = {VideoRec: 4-Channel USB Camera Recorder for Behavioral Neuroscience},
-  version      = {v10.14.11},
+  version      = {v10.14.16},
   year         = {2026},
   url          = {https://github.com/ww-001/VideoRec},
   note         = {Four-channel simultaneous USB recording with per-channel reference-frame alignment and software timestamps}
@@ -137,7 +140,9 @@ If you use VideoRec in your research, please cite:
 
 下载预编译的 Windows 包：
 
-- 📦 **直接下载：** [**`VideoRec_win7_v10.14.11.zip`**](https://github.com/ww-001/VideoRec/releases/download/v10.14.11/VideoRec_win7_v10.14.11.zip)（≈200 MB）
+- 📦 **直接下载：** [**`VideoRec_win7_v10.14.16.zip`**](https://github.com/ww-001/VideoRec/releases/download/v10.14.16/VideoRec_win7_v10.14.16.zip)
+
+> **已知限制（v10.14.16）：** 4 路 1920x1080@30fps 受 USB 带宽限制，每路约 10 fps。**4 路满帧请用 1280x720@30fps**（test7 已验证）。详情见 [CHANGELOG](CHANGELOG.md)。（≈200 MB）
 - 📋 **查看所有版本：** [Releases 页面](../../releases)
 
 下载后：解压 → 双击 `启动_Win7.bat`。
@@ -164,7 +169,7 @@ python src/main.py
 - **次版本** — 功能新增或重大 bug 修复
 - **补丁** — 打包 / 文档 / 小修补
 
-当前：**v10.14.11**（2026-08-13）。
+当前：**v10.14.16**（2026-10-13）。
 
 ### 引用
 
@@ -172,7 +177,7 @@ python src/main.py
 @software{VideoRec,
   author       = {Wang, Wenting},
   title        = {VideoRec: 四路 USB 摄像头同步录制工具（行为学神经科学）},
-  version      = {v10.14.11},
+  version      = {v10.14.16},
   year         = {2026},
   url          = {https://github.com/ww-001/VideoRec},
   note         = {多进程四路同步录制，每路独立参考帧虚影对齐，软件时间戳同步'}

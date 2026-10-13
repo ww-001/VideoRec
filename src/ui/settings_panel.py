@@ -39,6 +39,9 @@ class SettingsPanel(QWidget):
         res_form = QFormLayout(res_group)
         self.res_combo = QComboBox()
         self.res_combo.addItems(["320x240", "640x480", "800x600", "960x720",
+                                 "1000x1000",  # 行为学顶视正方形（IMX307 顶视多只小鼠场景）。
+                                 #  25cm 摄像高度 + 2.8mm 95° 无畸变镜头可覆盖 30×20cm 标准鼠笼，
+                                 #  1cm ≈ 32 pixels, 单只小鼠 60-100k pixels, 完美支持 DLC/SLEAP 姿态估计。
                                  "1280x720", "1280x960", "1920x1080"])
         # 默认 800x600@30：MJPG 下带宽占用 ~1MB/s/路，4 路也毫无压力
         # （实测 4 路 1920x1080@30 MJPG 都能跑满 29.4fps），清晰度比
@@ -52,9 +55,16 @@ class SettingsPanel(QWidget):
         self.fps_combo.currentTextChanged.connect(self._on_res_fps_changed)
         self.probe_btn = QPushButton("检测支持的分辨率")
         self.probe_btn.clicked.connect(self._probe_resolutions)
+        self.fps_probe_btn = QPushButton("检测真实帧率")
+        self.fps_probe_btn.clicked.connect(self._probe_real_fps)
         res_form.addRow("分辨率", self.res_combo)
         res_form.addRow("帧率", self.fps_combo)
-        res_form.addRow(self.probe_btn)
+        row_btns = QWidget()
+        row_btns_l = QHBoxLayout(row_btns)
+        row_btns_l.setContentsMargins(0, 0, 0, 0)
+        row_btns_l.addWidget(self.probe_btn)
+        row_btns_l.addWidget(self.fps_probe_btn)
+        res_form.addRow(row_btns)
         layout.addWidget(res_group)
 
         # 手动参数滑杆
@@ -229,6 +239,50 @@ class SettingsPanel(QWidget):
             return
         msg = "摄像头支持的分辨率：\n" + "\n".join(f"  {w}x{h}" for w, h in supported)
         QMessageBox.information(self, "检测分辨率", msg)
+
+    def _probe_real_fps(self):
+        """检测当前路在当前分辨率/帧率下的真实出帧率，弹窗报告。
+
+        区分「固件锁帧」与「传输掉帧」，给出实际可达帧率与建议。
+        注意：探测需独占读帧约 3 秒，多路时会占用当前路读取。
+        """
+        from qt_compat import QMessageBox
+        if self.camera is None:
+            QMessageBox.information(self, "检测真实帧率", "摄像头未连接")
+            return
+        # 未就绪的多路 WorkerCamera 也能探（共享内存读）；本地 Camera 需已打开
+        if not hasattr(self.camera, "probe_real_fps"):
+            QMessageBox.warning(self, "检测真实帧率", "当前摄像头不支持帧率探测")
+            return
+        try:
+            res = self.camera.probe_real_fps(seconds=3.0, min_frames=20)
+        except Exception as e:
+            QMessageBox.warning(self, "检测失败", f"探测异常：{e!r}")
+            return
+        if not res.get("ok"):
+            QMessageBox.warning(self, "检测真实帧率",
+                                f"探测失败：{res.get('detail', '未知')}")
+            return
+        verdict = res.get("verdict")
+        icon_map = {"ok": "🟢 达标", "locked": "🟠 固件锁帧",
+                    "unstable": "🔴 传输掉帧", "low": "🟠 帧率偏低",
+                    "error": "⚫ 错误"}
+        title = icon_map.get(verdict, verdict)
+        fps = res.get("fps", 0)
+        detail = res.get("detail", "")
+        # 建议：若锁帧且明显低于目标，提示用户可接受的真实档位
+        final = detail
+        if verdict == "locked" and fps > 0:
+            # 建议向下取整到常见档位（≤ 实测值 max 的档）
+            for cand in (60, 30, 25, 15, 10):
+                if fps >= cand * 0.85:
+                    final += f"\n\n建议：将帧率设为 {cand}fps（或更低）以避免误报丢帧。"
+                    break
+        QMessageBox.information(
+            self, f"检测真实帧率：{title}",
+            f"当前分辨率 {self.res_combo.currentText()}，"
+            f"目标 {self.fps_combo.currentText()}fps\n"
+            f"实测真实帧率：{fps:.1f} fps\n\n{final}")
 
     def _load_from_camera(self):
         """从当前摄像头读回参数，刷新滑杆。
